@@ -5,6 +5,7 @@ import {bindActionCreators} from "redux";
 import {SafeAreaView} from "react-navigation";
 import ActivityLoader from "../../common/ActivityLoader";
 import {getQuestions} from "../actions"
+import CardStack from "../../common/CardStack";
 
 class Questions extends Component {
 
@@ -24,8 +25,8 @@ class Questions extends Component {
     render() {
         return (
             <SafeAreaView style={styles.container}>
-                <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content"/>
-
+                <StatusBar hidden={true}/>
+                <CardStack cardCount={5}/>
                 <ActivityLoader loading={this.props.isLoading}/>
             </SafeAreaView>
         );
