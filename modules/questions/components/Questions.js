@@ -1,11 +1,12 @@
 import React, {Component} from "react";
-import {StatusBar, StyleSheet} from "react-native";
+import {StatusBar, StyleSheet, Text, View} from "react-native";
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {SafeAreaView} from "react-navigation";
 import ActivityLoader from "../../common/ActivityLoader";
 import {getQuestions} from "../actions"
 import CardStack from "../../common/CardStack";
+import {TEST_DATA} from "../../../common/constants";
 
 class Questions extends Component {
 
@@ -22,11 +23,22 @@ class Questions extends Component {
 
     }
 
+    renderQuestion(item) {
+        return (
+            <View style={styles.cardContainer}>
+                <Text style={styles.cardTitle}>{item.number}</Text>
+            </View>
+        )
+    }
+
     render() {
         return (
             <SafeAreaView style={styles.container}>
                 <StatusBar hidden={true}/>
-                <CardStack cardCount={5}/>
+                <CardStack
+                    cardCount={5}
+                    data={TEST_DATA}
+                    renderCardContent={(item) => this.renderQuestion(item)}/>
                 <ActivityLoader loading={this.props.isLoading}/>
             </SafeAreaView>
         );
@@ -62,5 +74,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 8,
         marginHorizontal: 10
+    },
+    cardContainer: {
+        flex: 1,
+        padding: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    cardTitle: {
+        fontFamily: 'product-sans-regular',
+        fontSize: 16
     }
 });

@@ -5,70 +5,111 @@ class CardStack extends Component {
 
     constructor(props) {
         super(props);
-        console.log(props);
         this.state = {
-            cardCount: 0,
-            cardPositions: [],
+            cardCount: 5,
+            data: [],
+            progress: 0
         };
+
+        this.cardPositions = [];
 
         this.panResponder = PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onPanResponderMove: (evt, gestureState) => {
                 for (let i = 0; i < this.state.cardCount; i++) {
-                    this.state.cardPositions[i].setValue({
+                    this.cardPositions[i].setValue({
                         x: gestureState.dx / ((this.state.cardCount - i) * (this.state.cardCount - i)),
                         y: gestureState.dy / ((this.state.cardCount - i) * (this.state.cardCount - i))
-                    });
+                    }, {useNativeDriver: true});
                 }
             },
             onPanResponderRelease: (e, gesture) => {
-                console.log(e, gesture);
-                for (let i = 0; i < this.state.cardCount; i++) {
-                    Animated.spring(
-                        this.state.cardPositions[i],
-                        {toValue: {x: 0, y: 0}}
-                    ).start();
+                if (Math.abs(gesture.vx) > 0.7 || Math.abs(gesture.vy) > 0.7) {
+                    for (let i = 0; i < this.state.cardCount - 1; i++) {
+                        Animated.spring(
+                            this.cardPositions[i],
+                            {toValue: {x: 0, y: 0}},
+                            {useNativeDriver: true}
+                        ).start();
+                    }
+                    Animated.timing(
+                        this.cardPositions[this.state.cardCount - 1],
+                        {
+                            toValue: {x: gesture.dx * 5, y: gesture.dy * 5},
+                            duration: 200
+                        },
+                        {useNativeDriver: true}
+                    ).start(() => {
+                        this.removeCard();
+                    });
+                } else {
+                    for (let i = 0; i < this.state.cardCount; i++) {
+                        Animated.spring(
+                            this.cardPositions[i],
+                            {toValue: {x: 0, y: 0}},
+                            {useNativeDriver: true}
+                        ).start();
+                    }
                 }
             }
         });
     }
 
     componentDidMount() {
-        let cardCount = this.props.cardCount;
-        let cardPositions = [];
-        for (let i = 0; i < cardCount; i++)
-            cardPositions = cardPositions.concat(new Animated.ValueXY());
-        this.setState({cardPositions: cardPositions, cardCount: cardCount});
+        this.cardPositions = [];
+        for (let i = 0; i < this.props.cardCount; i++)
+            this.cardPositions = this.cardPositions.concat(new Animated.ValueXY());
+
+        this.setState({cardCount: this.props.cardCount, data: this.props.data});
+    }
+
+    removeCard() {
+        this.cardPositions.pop();
+
+        if (this.state.progress + this.state.cardCount >= this.state.data.length) {
+            this.setState({
+                cardCount: this.state.cardCount - 1,
+                progress: this.state.progress + 1
+            });
+        } else {
+            this.cardPositions = [new Animated.ValueXY(), ...this.cardPositions];
+            this.setState({
+                progress: this.state.progress + 1
+            });
+        }
     }
 
     renderCards() {
-        if (this.state.cardPositions.length === 0)
+        if (this.cardPositions.length === 0)
             return null;
 
-        let cardCount = this.props.cardCount;
         let renderedCards = [];
-        let scale = 1.00 - (cardCount * 0.02);
+        let scale = 1.00 - (this.state.cardCount * 0.02);
+        let top = (this.state.cardCount - 0.5) * (-10);
+        let left = (this.state.cardCount - 0.5) * (-8);
 
-        for (let i = 0; i < cardCount - 1; i++) {
+        for (let i = 0; i < this.state.cardCount - 1; i++) {
             renderedCards = renderedCards.concat(
                 <View style={styles.cardContainer} key={'card_' + i}>
                     <Animated.View
-                        style={[this.state.cardPositions[i].getLayout(), styles.card, {
-
-                            backgroundColor: '#FFF'
-                        }]}>
+                        style={[this.cardPositions[i].getLayout(), styles.card, {transform: ([{scale: scale}, {translateY: top}, {translateX: left}])}]}>
+                        {this.props.renderCardContent(this.state.data[this.state.progress + (this.state.cardCount - 1 - i)])}
                     </Animated.View>
                 </View>
             );
+            scale = scale + 0.02;
+            top = top + 10;
+            left = left + 8;
         }
 
         renderedCards = renderedCards.concat(
             <View
-                key={'card_' + cardCount}
+                key={'card_' + this.state.cardCount}
                 style={[styles.cardContainer]}>
                 <Animated.View
                     {...this.panResponder.panHandlers}
-                    style={[this.state.cardPositions[cardCount - 1].getLayout(), styles.cardActive, {backgroundColor: '#FFF'}]}>
+                    style={[this.cardPositions[this.state.cardCount - 1].getLayout(), styles.cardActive]}>
+                    {this.props.renderCardContent(this.state.data[this.state.progress])}
                 </Animated.View>
             </View>
         );
@@ -111,7 +152,7 @@ const styles = StyleSheet.create({
         width: 300,
         height: 400,
         backgroundColor: '#FFFFFF',
-        borderRadius: 3,
+        borderRadius: 10,
         borderColor: '#CCCCCC',
         borderWidth: 1
     },
@@ -128,7 +169,7 @@ const styles = StyleSheet.create({
         width: 300,
         height: 400,
         backgroundColor: '#FFFFFF',
-        borderRadius: 3,
+        borderRadius: 10,
         borderColor: '#CCCCCC',
         borderWidth: 1
     }
